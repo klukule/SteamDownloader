@@ -1,0 +1,27 @@
+<Project>
+    <PropertyGroup>
+        <SteamKitRootDir>$(MSBuildThisFileDirectory)</SteamKitRootDir>
+        <SteamKitBaseVersion>2.5.0</SteamKitBaseVersion>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <SteamKitVersion Condition=" '$(GITHUB_RUN_NUMBER)' != ''">$(SteamKitBaseVersion)-Alpha.$(GITHUB_RUN_NUMBER)</SteamKitVersion>
+        <SteamKitVersion Condition=" '$(GITHUB_RUN_NUMBER)' == ''">$(SteamKitBaseVersion)</SteamKitVersion>
+
+        <AssemblyVersion>$(SteamKitBaseVersion)</AssemblyVersion>
+        <FileVersion>$(SteamKitBaseVersion)</FileVersion>
+        <Version>$(SteamKitVersion)</Version>
+
+        <GitHubActionsRef Condition="$(GITHUB_REF.StartsWith('refs/heads/'))">$(GITHUB_REF.Substring(11))</GitHubActionsRef>
+        <GitHubActionsRef Condition="$(GitHubActionsRef) == ''">$(GITHUB_REF)</GitHubActionsRef>
+        <InformationalVersion Condition=" '$(GitHubActionsRef)' == ''">$(SteamKitVersion) - Development</InformationalVersion>
+        <InformationalVersion Condition=" '$(GitHubActionsRef)' != ''">$(SteamKitVersion) - CI (GitHub, ref: $(GitHubActionsRef))</InformationalVersion>
+    </PropertyGroup>
+    <PropertyGroup>
+        <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+        <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+        <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+        <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    </PropertyGroup>
+</Project>

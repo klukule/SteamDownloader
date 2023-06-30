@@ -1,0 +1,60 @@
+#include "standard-types.hsl"
+
+#pragma displayname("steam app ticket")
+#pragma byteorder(little_endian) 
+
+struct TSECTION
+{
+	DWORD length;
+	BYTE data[length];
+};
+
+struct GCTOKEN
+{
+	QUAD token;
+	QUAD steamid;
+	time_t time;
+};
+
+// this is only seen in GetAuthSession tickets
+struct SESSIONHEADER
+{
+	DWORD unk1; // always 1?
+	DWORD unk2; // always 2?
+	DWORD externalIP;
+	DWORD filler; // always 0?
+	DWORD timeStamp; // seems to be milliseconds since steam launched/connected to steam3
+	DWORD connectionCount; // number of times the client has connected to a server
+};
+
+typedef struct tDLCINFO
+{
+	DWORD appid;
+	WORD subCount; // subs  -> paid for??
+	DWORD sub[subCount];
+} DLCINFO;
+
+typedef struct tOWNERSHIPTICKET
+{
+	DWORD length;
+	DWORD version;
+	QUAD steamid;
+	DWORD appid;
+	DWORD externalIP;
+	DWORD internalIP;
+	DWORD ownershipFlags;
+	time_t ticketGeneration;
+	time_t ticketExpiration;
+	WORD licenseCount; // subs
+	DWORD license[licenseCount];
+	WORD dlcCount; // apps
+	DLCINFO dlc[dlcCount];
+	WORD reserved;
+} OWNERSHIPTICKET;
+
+struct OWNERSHIPSECTIONWITHSIGNATURE
+{
+	DWORD sectlength;
+	OWNERSHIPTICKET ticket;
+	BYTE signature[128];
+};

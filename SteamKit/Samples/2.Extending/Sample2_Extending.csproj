@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <Authors />
+    <Company>SteamRE Team</Company>
+    <Description>SteamKit Sample 2: Extending</Description>
+    <Copyright>Copyright © Ryan Stecker 2018</Copyright>
+    <NoWarn>CA1822</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SteamKit2\SteamKit2\SteamKit2.csproj" />
+  </ItemGroup>
+
+</Project>
