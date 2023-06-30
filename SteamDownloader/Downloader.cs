@@ -15,6 +15,12 @@ namespace Decryptor
         {
             // Get target directory and load file decryption keys
             GAME_ROOT = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), path));
+
+            if (!Directory.Exists(GAME_ROOT))
+            {
+                Directory.CreateDirectory(GAME_ROOT);
+            }
+
             DEPOT_KEYS = LoadDepotKeys(depotKeys);
 
             // Build file maps from both manifests and file system
@@ -66,6 +72,10 @@ namespace Decryptor
                 Console.WriteLine("[DOWNLOAD] Allocating file {0} - file size {1} bytes", file.Key, file.Value.Data.TotalSize);
                 var fullPath = Path.GetFullPath(Path.Combine(GAME_ROOT, file.Key));
                 var zeroes = new byte[file.Value.Data.TotalSize];
+                var dir = Path.GetDirectoryName(fullPath);
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
                 var fs = File.Create(fullPath, zeroes.Length);
                 fs.Write(zeroes, 0, zeroes.Length);
                 fs.Close();
