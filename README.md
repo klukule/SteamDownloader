@@ -22,6 +22,7 @@ To change location where the game is downloaded to, or where the depot keys and 
 - [ ] Implement CLI interface
 - [ ] Split allocation and download stages so they can be ran in parallel
 - [ ] Auto-retry on chunk download failure
+- [ ] Handle special case while calculating hashes for files with 0 length
 
 ### Third-party libraries
 - [SteamKit](https://github.com/SteamRE/SteamKit) - Licensed under [LGPL-2.1](https://github.com/SteamRE/SteamKit/blob/master/LICENSE)
