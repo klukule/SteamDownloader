@@ -18,7 +18,6 @@ To change location where the game is downloaded to, or where the depot keys and 
 
 ### TODO
 - [ ] Calculate chunk hashes when file hash is different and download only changed chunks instead of whole files
-- [ ] Optimalize persistence
 - [ ] Implement CLI interface
 - [ ] Split allocation and download stages so they can be ran in parallel
 - [ ] Auto-retry on chunk download failure
