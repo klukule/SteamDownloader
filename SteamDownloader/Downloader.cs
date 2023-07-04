@@ -11,7 +11,7 @@ namespace Decryptor
         private static Dictionary<string, FileSystemEntry> FILEMAP_DISK = new();
         private static Dictionary<string, ManifestFileEntry> FILEMAP_MANIFEST = new();
         private static HttpClient CLIENT = new HttpClient();
-        public static void DownloadGame(string path, IEnumerable<DepotManifest> manifests, string depotKeys)
+        public static async Task DownloadGame(string path, IEnumerable<DepotManifest> manifests, string depotKeys)
         {
             // Get target directory and load file decryption keys
             GAME_ROOT = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), path));
@@ -24,7 +24,7 @@ namespace Decryptor
             DEPOT_KEYS = LoadDepotKeys(depotKeys);
 
             // Build file maps from both manifests and file system
-            BuildDiskFileMap();
+            await BuildDiskFileMap();
 
             FILEMAP_MANIFEST.Clear();
             foreach (var manifest in manifests)
@@ -67,7 +67,7 @@ namespace Decryptor
             }
 
             // Create new files and queue them for download
-            Parallel.ForEach(filesToCreate, (file) =>
+            var tasksToCreate = filesToCreate.Select(async file =>
             {
                 Console.WriteLine("[DOWNLOAD] Allocating file {0} - file size {1} bytes", file.Key, file.Value.Data.TotalSize);
                 var fullPath = Path.GetFullPath(Path.Combine(GAME_ROOT, file.Key));
@@ -77,7 +77,7 @@ namespace Decryptor
                     Directory.CreateDirectory(dir);
 
                 var fs = File.Create(fullPath, zeroes.Length);
-                fs.Write(zeroes, 0, zeroes.Length);
+                await fs.WriteAsync(zeroes, 0, zeroes.Length);
                 fs.Close();
 
                 lock (filesToDownload)
@@ -86,26 +86,43 @@ namespace Decryptor
                 }
             });
 
+            await Task.WhenAll(tasksToCreate);
+
             Console.WriteLine("[DOWNLOAD] Downloading changed {0} files", filesToDownload.Count);
 
+            var semaphore = new SemaphoreSlim(1);
+
             // Now we download
-            Parallel.ForEach(filesToDownload, file =>
+            var tasksToDownload = filesToDownload.Select(async file =>
             {
+                await semaphore.WaitAsync();
+
                 var line = $"[DOWNLOAD] Downloading file {file.Key} - ";
                 try
                 {
-                    DownloadFile(file.Value);
-                    Console.WriteLine(line + "Success");
+                    try
+                    {
+                        await DownloadFile(file.Value);
+                        Console.WriteLine(line + "Success");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(line + "Failed - " + ex.Message);
+                    }
                 }
-                catch (Exception ex)
+                finally
                 {
-                    Console.WriteLine(line + "Failed - " + ex.Message);
+                    semaphore.Release();
                 }
             });
+
+            await Task.WhenAll(tasksToDownload);
 
             Console.WriteLine("------------------");
             Console.WriteLine("DOWNLOAD COMPLETED");
             Console.WriteLine("------------------");
+
+            Console.ReadLine();
         }
 
         private static void BuildManifestFileMap(DepotManifest manifest)
@@ -118,7 +135,7 @@ namespace Decryptor
             }
         }
 
-        private static void BuildDiskFileMap()
+        private static async Task BuildDiskFileMap()
         {
             FILEMAP_DISK = new();
 
@@ -131,14 +148,14 @@ namespace Decryptor
 
             Console.WriteLine("Building local filemap");
 
-            Parallel.ForEach(files, (file) =>
+            var tasks = files.Select(async file =>
             {
                 var relativePath = Path.GetRelativePath(GAME_ROOT, file);
 
                 var entry = new FileSystemEntry
                 {
                     Info = new FileInfo(file),
-                    FileHash = CryptoHelper.SHAHash(File.ReadAllBytes(file))
+                    FileHash = CryptoHelper.SHAHash(await File.ReadAllBytesAsync(file))
                 };
 
                 // TODO: Calculate chunk hashes, so we can just replace changed chunks if the file size is the same instead of redownloading whole file
@@ -149,25 +166,23 @@ namespace Decryptor
                 }
             });
 
+            await Task.WhenAll(tasks);
         }
 
-        public static void DownloadFile(ManifestFileEntry file)
+        public static async Task DownloadFile(ManifestFileEntry file)
         {
             var fullPath = Path.GetFullPath(Path.Combine(GAME_ROOT, file.Data.FileName.TrimNulls()));
             using var fs = File.OpenWrite(fullPath);
 
-            Parallel.ForEach(file.Data.Chunks, chunk =>
-            {
-                DownloadChunk(fs, file.DepotID, chunk, file.DecryptionKey);
-            });
+            var tasks = file.Data.Chunks.Select(async chunk => await DownloadChunk(fs, file.DepotID, chunk, file.DecryptionKey));
+
+            await Task.WhenAll(tasks);
         }
 
-        private static void DownloadChunk(FileStream fs, uint depotId, DepotManifest.ChunkData chunk, byte[] decryptionKey)
+        private static async Task DownloadChunk(FileStream fs, uint depotId, DepotManifest.ChunkData chunk, byte[] decryptionKey)
         {
             // TODO: Rewrite async/await
-            var task = CLIENT.GetByteArrayAsync($"https://google.cdn.steampipe.steamcontent.com/depot/{depotId}/chunk/{Utils.EncodeHexString(chunk.ChunkID)}");
-            task.Wait();
-            var chunkData = task.Result;
+            var chunkData = await CLIENT.GetByteArrayAsync($"https://google.cdn.steampipe.steamcontent.com/depot/{depotId}/chunk/{Utils.EncodeHexString(chunk.ChunkID)}");
 
             byte[] processedData = CryptoHelper.SymmetricDecrypt(chunkData, decryptionKey);
 
@@ -185,11 +200,8 @@ namespace Decryptor
                 throw new Exception("Invalid chunk checksum");
             }
 
-            lock (fs)
-            {
-                fs.Position = (long)chunk.Offset;
-                fs.Write(processedData, 0, processedData.Length);
-            }
+            fs.Position = (long)chunk.Offset;
+            await fs.WriteAsync(processedData, 0, processedData.Length);
         }
 
         private static Dictionary<uint, byte[]> LoadDepotKeys(string v)

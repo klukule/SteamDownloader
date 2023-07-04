@@ -5,4 +5,4 @@ List<DepotManifest> manifests = new();
 foreach (var manifest in Directory.GetFiles("./manifests"))
     manifests.Add(DepotManifest.LoadFromFile(manifest));
 
-Downloader.DownloadGame("./cs2", manifests, "./depot_keys.json");
+Task.Run(() => Downloader.DownloadGame("./cs2", manifests, "./depot_keys.json")).GetAwaiter().GetResult();
