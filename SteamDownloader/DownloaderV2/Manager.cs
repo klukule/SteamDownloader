@@ -22,13 +22,8 @@ namespace SteamDownloader.DownloaderV2
         public const int DownloadQueueLength = 1024; // If download queue has more than 1024 entries, verification will pause until stuff is downloaded
         public const int WriteQueueLength = 512; // If write queue has more than 512 entries download will pause and will wait for the queue to go to less than this number
 
-        public static async Task Entry(DirectoryInfo targetDir, DirectoryInfo manifestDir, FileInfo depotKeyFile, bool bRemoveLocalOnly)
+        public static async Task Entry(DirectoryInfo targetDir, DirectoryInfo manifestDir, FileInfo depotKeyFile, bool bRemoveLocalOnly, int downloadThreads, int verifyThreads, int writeThreads)
         {
-            const int downloadThreads = 8;      // Number of threads used to download chunks over HTTP and decompress them
-            const int verifyThreads = 8;        // Number of threads used to do file verification on local disk - if file does not exists, it sends write request
-            const int writeThreads = 8;        // Number of threads used to write downloaded chunks to local disk
-
-
             // Create target directory if one does not exist
             if (!targetDir.Exists)
                 targetDir.Create();
