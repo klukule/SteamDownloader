@@ -9,6 +9,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="SharpCompress" Version="0.33.0" />
+		<PackageReference Include="ShellProgressBar" Version="5.2.0" />
+		<PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
 	</ItemGroup>
 
 	<ItemGroup>
