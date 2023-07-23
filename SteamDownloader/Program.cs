@@ -8,11 +8,6 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
-        Console.WriteLine("=================================");
-        Console.WriteLine("SteamDownloader v" + Assembly.GetExecutingAssembly().GetName().Version.ToString());
-        Console.WriteLine("=================================");
-        Console.WriteLine();
-
         var targetDirOpt = new Option<DirectoryInfo>("--target", () => new DirectoryInfo("./cs2"), description: "Target Directory");
         var manifestDirOpt = new Option<DirectoryInfo>("--manifests", () => new DirectoryInfo("./manifests"), description: "Directory containing manifest files");
         var depotKeyFileOpt = new Option<FileInfo>("--depot_keys", () => new FileInfo("./depot_keys.json"), description: "File containig depot keys");
