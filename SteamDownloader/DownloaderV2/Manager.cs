@@ -109,6 +109,8 @@ namespace SteamDownloader.DownloaderV2
                 var manifest = DepotManifest.LoadFromFile(manifestPath.FullName);
                 foreach (var file in manifest.Files)
                 {
+                    if (file.Flags.HasFlag(EDepotFileFlag.Directory)) continue; // Skip directories
+
                     var relativePath = file.FileName.TrimNulls();
                     map.Add(relativePath, new RemoteFile { FileInfo = file, DecryptionKey = keys[manifest.DepotID], DepotID = manifest.DepotID });
                 }
